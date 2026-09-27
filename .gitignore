@@ -1,0 +1,12 @@
+# Reports (device-specific data, not for repo)
+reports/
+*.txt
+!README.md
+
+# PowerShell
+*.ps1xml
+
+# OS
+Thumbs.db
+desktop.ini
+.DS_Store
