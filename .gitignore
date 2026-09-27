@@ -1,10 +1,5 @@
-# Reports (device-specific data, not for repo)
+# Reports (device-specific data)
 reports/
-*.txt
-!README.md
-
-# PowerShell
-*.ps1xml
 
 # OS
 Thumbs.db

@@ -41,7 +41,7 @@ $HL = [string]::new([char]0x2550, 58)
 function Section($Title) {
     $tw = [math]::Max(4, 56 - (StrWidth $Title))
     Write-Host ""
-    Write-Host ([char]0x2554 + [char]0x2550 * 2 + ' ' + $Title + ' ' + ([string]::new([char]0x2550, $tw)) + [char]0x2557) -ForegroundColor Cyan
+    Write-Host ([char]0x2554 + [string]::new([char]0x2550, 2) + ' ' + $Title + ' ' + ([string]::new([char]0x2550, $tw)) + [char]0x2557) -ForegroundColor Cyan
 }
 function KV($Key, $Value, $Color = 'White') {
     $kp = PadRight2 $Key 16
@@ -63,7 +63,7 @@ function Rating($Label, $Score, $Max = 10) {
 
 # ===== ADB =====
 function Adb($Serial, $Cmd) {
-    $r = (cmd /c "adb -s $Serial shell $Cmd 2>&1")
+    $r = (cmd /c "`"$adbCmd`" -s $Serial shell $Cmd 2>&1")
     return ($r -join "`n").Trim()
 }
 function Prop($Serial, $Name) {
@@ -165,21 +165,27 @@ Write-Host ([char]0x2551 + (PadRight2 '  Android 硬件检测工具 v2.2' 60) + 
 Write-Host ([char]0x2551 + (PadRight2 '  ADB + SoC 数据库 + 智能分析 + 报告导出' 60) + [char]0x2551) -ForegroundColor Magenta
 Write-Host ([char]0x255A + $hline + [char]0x255D) -ForegroundColor Magenta
 
-# ADB
+# ADB - 优先用内置的，其次 PATH
 Write-Host ""
 Write-Host "  [1/4] 检测 ADB..." -ForegroundColor Yellow
-if (!(Get-Command adb -ErrorAction SilentlyContinue)) {
-    C "  [!] 未找到 adb，请安装 Platform-Tools" 'Red'
+$bundledAdb = Join-Path $ScriptRoot 'platform-tools\adb.exe'
+$adbCmd = 'adb'
+if (Test-Path $bundledAdb) {
+    $adbCmd = $bundledAdb
+    C "  [OK] 使用内置 ADB: $bundledAdb" 'Green'
+} elseif (Get-Command adb -ErrorAction SilentlyContinue) {
+    C "  [OK] 使用系统 ADB (PATH)" 'Green'
+} else {
+    C "  [!] 未找到 adb。请安装 Platform-Tools 或将 adb 放入 platform-tools\" 'Red'
     if (!$Quiet) { Read-Host "  回车退出" }
     exit 1
 }
-C "  [OK] ADB 就绪" 'Green'
 
 # 设备
 Write-Host "  [2/4] 检测设备..." -ForegroundColor Yellow
-$null = (cmd /c "adb start-server 2>&1")
+$null = (cmd /c "`"$adbCmd`" start-server 2>&1")
 Start-Sleep -Milliseconds 800
-$devRaw = (cmd /c "adb devices 2>&1")
+$devRaw = (cmd /c "`"$adbCmd`" devices 2>&1")
 $devLines = @($devRaw | Where-Object { $_ -match '\S+' -and $_ -notmatch 'List of' })
 $devLines = @($devLines | Where-Object { $_ -match 'device' })
 if ($devLines.Count -eq 0) {
