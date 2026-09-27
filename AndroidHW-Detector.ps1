@@ -291,8 +291,11 @@ if ($Wireless) {
 
 # 设备
 Write-Host "  [2/4] 检测设备..." -ForegroundColor Yellow
-$null = (cmd /c "`"$adbCmd`" kill-server 2>&1")
-Start-Sleep -Milliseconds 500
+if (!$Wireless) {
+    # 无线模式下不 kill-server，避免断开已配对的无线连接
+    $null = (cmd /c "`"$adbCmd`" kill-server 2>&1")
+    Start-Sleep -Milliseconds 500
+}
 $null = (cmd /c "`"$adbCmd`" start-server 2>&1")
 Start-Sleep -Milliseconds 1000
 $devRaw = (cmd /c "`"$adbCmd`" devices 2>&1")
