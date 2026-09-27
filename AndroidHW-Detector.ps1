@@ -35,7 +35,7 @@ function PadRight2($s, $targetWidth) {
 }
 
 # ===== 颜色 =====
-function C($t, $c) { Write-Host $t -ForegroundColor $c }
+function C($t, $c = 'White') { Write-Host $t -ForegroundColor $c }
 
 # ===== 框线 =====
 $HL = [string]::new([char]0x2550, 58)
@@ -193,9 +193,13 @@ if ($Wireless) {
     $mode = Read-Host "  选择模式 (1/2)"
     if ($mode -eq '1') {
         $pairAddr = Read-Host "  输入配对地址 (IP:配对端口)"
-        if ($pairAddr) {
+        $pairCode = Read-Host "  输入配对码 (手机上显示的6位数字)"
+        if ($pairAddr -and $pairCode) {
             C "  正在配对..." 'Yellow'
-            cmd /c "`"$adbCmd`" pair $pairAddr 2>&1" | ForEach-Object { C "    $_" 'DarkGray' }
+            $pairResult = (cmd /c "`"$adbCmd`" pair $pairAddr $pairCode 2>&1")
+            $pairResult | ForEach-Object { C "    $_" 'DarkGray' }
+            if ($pairResult -match 'Successfully') { C "  [OK] 配对成功" 'Green' }
+            else { C "  [!] 配对失败，请检查地址和配对码" 'Red' }
         }
         $connAddr = Read-Host "  输入连接地址 (IP:连接端口)"
         if ($connAddr) {
