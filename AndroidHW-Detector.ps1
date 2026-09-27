@@ -229,8 +229,9 @@ if ($Wireless) {
     C ""
     C "  [1] Android 11+ 无线调试 (配对+连接)" 'White'
     C "  [2] USB 转无线 (tcpip 5555)" 'White'
+    C "  [3] 已配对设备，直接连接" 'White'
     C ""
-    $mode = Read-Host "  选择模式 (1/2)"
+    $mode = Read-Host "  选择模式 (1/2/3)"
     if ($mode -eq '1') {
         C ""
         C "  注意: 配对端口和连接端口是两个不同的端口!" 'Red'
@@ -266,6 +267,23 @@ if ($Wireless) {
             $connResult | ForEach-Object { C "    $_" 'DarkGray' }
             if ($connResult -match 'connected') { C "  [OK] 无线连接成功" 'Green' }
             else { C "  [!] 连接失败" 'Red' }
+        }
+    } elseif ($mode -eq '3') {
+        C ""
+        C "  已配对设备直接连接" 'Yellow'
+        C "  在手机 无线调试 主页查看 IP:连接端口" 'DarkGray'
+        C ""
+        $connAddr = Read-Host "  输入连接地址 (IP:连接端口)"
+        if ($connAddr) {
+            C "  正在连接..." 'Yellow'
+            $connResult = (cmd /c "`"$adbCmd`" connect $connAddr 2>&1")
+            $connResult | ForEach-Object { C "    $_" 'DarkGray' }
+            if ($connResult -match 'connected') { C "  [OK] 无线连接成功" 'Green' }
+            else {
+                C "  [!] 连接失败" 'Red'
+                C "  可能原因: 端口变了(每次开无线调试端口不同) / 未配对 / 不在同一WiFi" 'DarkGray'
+                C "  尝试模式1重新配对" 'Yellow'
+            }
         }
     }
     C ""
