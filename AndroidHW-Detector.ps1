@@ -10,7 +10,8 @@
 param(
     [string]$Device,
     [switch]$Export,
-    [switch]$Quiet
+    [switch]$Quiet,
+    [switch]$Wireless
 )
 
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
@@ -181,16 +182,65 @@ if (Test-Path $bundledAdb) {
     exit 1
 }
 
+# 无线连接模式
+if ($Wireless) {
+    C ""
+    C "  === 无线 ADB 连接 ===" 'Cyan'
+    C ""
+    C "  [1] Android 11+ 无线调试 (配对+连接)" 'White'
+    C "  [2] USB 转无线 (tcpip 5555)" 'White'
+    C ""
+    $mode = Read-Host "  选择模式 (1/2)"
+    if ($mode -eq '1') {
+        $pairAddr = Read-Host "  输入配对地址 (IP:配对端口)"
+        if ($pairAddr) {
+            C "  正在配对..." 'Yellow'
+            cmd /c "`"$adbCmd`" pair $pairAddr 2>&1" | ForEach-Object { C "    $_" 'DarkGray' }
+        }
+        $connAddr = Read-Host "  输入连接地址 (IP:连接端口)"
+        if ($connAddr) {
+            C "  正在连接..." 'Yellow'
+            $connResult = (cmd /c "`"$adbCmd`" connect $connAddr 2>&1")
+            $connResult | ForEach-Object { C "    $_" 'DarkGray' }
+            if ($connResult -match 'connected') { C "  [OK] 无线连接成功" 'Green' }
+            else { C "  [!] 连接失败，请检查 IP 和端口" 'Red' }
+        }
+    } elseif ($mode -eq '2') {
+        C "  需要先用 USB 连接手机..." 'Yellow'
+        $null = (cmd /c "`"$adbCmd`" tcpip 5555 2>&1")
+        Start-Sleep -Seconds 2
+        $wifiIP = Read-Host "  输入手机 WiFi IP 地址"
+        if ($wifiIP) {
+            C "  请拔掉 USB 线，正在无线连接..." 'Yellow'
+            Start-Sleep -Seconds 3
+            $connResult = (cmd /c "`"$adbCmd`" connect ${wifiIP}:5555 2>&1")
+            $connResult | ForEach-Object { C "    $_" 'DarkGray' }
+            if ($connResult -match 'connected') { C "  [OK] 无线连接成功" 'Green' }
+            else { C "  [!] 连接失败" 'Red' }
+        }
+    }
+    C ""
+}
+
 # 设备
 Write-Host "  [2/4] 检测设备..." -ForegroundColor Yellow
+$null = (cmd /c "`"$adbCmd`" kill-server 2>&1")
+Start-Sleep -Milliseconds 500
 $null = (cmd /c "`"$adbCmd`" start-server 2>&1")
-Start-Sleep -Milliseconds 800
+Start-Sleep -Milliseconds 1000
 $devRaw = (cmd /c "`"$adbCmd`" devices 2>&1")
 $devLines = @($devRaw | Where-Object { $_ -match '\S+' -and $_ -notmatch 'List of' })
 $devLines = @($devLines | Where-Object { $_ -match 'device' })
 if ($devLines.Count -eq 0) {
-    C "  [!] 无设备连接。请开启 USB 调试并授权" 'Red'
-    C "  调试: adb devices 原始输出:" 'Yellow'
+    C "  [!] 无设备连接" 'Red'
+    C ""
+    C "  连接方式:" 'Yellow'
+    C "  [USB]    连接数据线 + 开启 USB 调试" 'White'
+    C "  [无线]   Android 11+: 设置→开发者→无线调试→配对" 'White'
+    C "           adb pair <IP>:<配对端口>  然后  adb connect <IP>:<连接端口>" 'DarkGray'
+    C "  [无线]   USB 先连后切: adb tcpip 5555 → adb connect <IP>:5555" 'DarkGray'
+    C ""
+    C "  调试: adb devices 原始输出:" 'DarkGray'
     $devRaw | ForEach-Object { C "    [$_]" 'DarkGray' }
     if (!$Quiet) { Read-Host "  回车退出" }
     exit 1
