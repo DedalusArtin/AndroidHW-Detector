@@ -11,7 +11,8 @@ param(
     [string]$Device,
     [switch]$Export,
     [switch]$Quiet,
-    [switch]$Wireless
+    [switch]$Wireless,
+    [switch]$Help
 )
 
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
@@ -156,6 +157,45 @@ $MfrDB = @{
 }
 
 # ================================================================
+#  Help
+# ================================================================
+if ($Help) {
+    Write-Host ""
+    Write-Host "  Android 硬件检测工具 v2.2" -ForegroundColor Magenta
+    Write-Host "  ==========================" -ForegroundColor Magenta
+    Write-Host ""
+    Write-Host "  用法:" -ForegroundColor Cyan
+    Write-Host "    AndroidHW-Detector [参数]" -ForegroundColor White
+    Write-Host ""
+    Write-Host "  参数:" -ForegroundColor Cyan
+    Write-Host "    (无参数)        直接检测已连接设备" -ForegroundColor White
+    Write-Host "    -Wireless       无线 ADB 连接向导" -ForegroundColor White
+    Write-Host "    -Export         导出报告到 reports\ 目录" -ForegroundColor White
+    Write-Host "    -Device <SN>    指定设备序列号" -ForegroundColor White
+    Write-Host "    -Quiet          静默模式(结束不暂停)" -ForegroundColor White
+    Write-Host "    -Help           显示此帮助" -ForegroundColor White
+    Write-Host ""
+    Write-Host "  无线连接说明:" -ForegroundColor Cyan
+    Write-Host "    Android 11+ 无线调试有两个不同端口:" -ForegroundColor Yellow
+    Write-Host "      1. 打开 设置 → 开发者选项 → 无线调试" -ForegroundColor White
+    Write-Host "      2. 点'使用配对码配对设备' → 记下 配对端口 + 配对码" -ForegroundColor White
+    Write-Host "      3. 返回无线调试主页 → 记下 连接端口 (和配对端口不同!)" -ForegroundColor White
+    Write-Host "      4. 运行 AndroidHW-Detector -Wireless" -ForegroundColor White
+    Write-Host "      5. 选模式1 → 输入 IP:配对端口 + 配对码 → 输入 IP:连接端口" -ForegroundColor White
+    Write-Host ""
+    Write-Host "    重要: 配对端口和连接端口是两个不同的端口号!" -ForegroundColor Red
+    Write-Host "    例: 配对 192.168.1.5:37727  连接 192.168.1.5:42869" -ForegroundColor DarkGray
+    Write-Host ""
+    Write-Host "  示例:" -ForegroundColor Cyan
+    Write-Host "    AndroidHW-Detector.exe" -ForegroundColor DarkGray
+    Write-Host "    AndroidHW-Detector.exe -Export" -ForegroundColor DarkGray
+    Write-Host "    AndroidHW-Detector.exe -Wireless" -ForegroundColor DarkGray
+    Write-Host "    AndroidHW-Detector.exe -Device d32fb5c7 -Export -Quiet" -ForegroundColor DarkGray
+    Write-Host ""
+    exit 0
+}
+
+# ================================================================
 #  1. 前置检测
 # ================================================================
 Clear-Host
@@ -192,6 +232,11 @@ if ($Wireless) {
     C ""
     $mode = Read-Host "  选择模式 (1/2)"
     if ($mode -eq '1') {
+        C ""
+        C "  注意: 配对端口和连接端口是两个不同的端口!" 'Red'
+        C "  配对端口: 点'使用配对码配对设备'后显示" 'DarkGray'
+        C "  连接端口: 返回无线调试主页显示" 'DarkGray'
+        C ""
         $pairAddr = Read-Host "  输入配对地址 (IP:配对端口)"
         $pairCode = Read-Host "  输入配对码 (手机上显示的6位数字)"
         if ($pairAddr -and $pairCode) {
